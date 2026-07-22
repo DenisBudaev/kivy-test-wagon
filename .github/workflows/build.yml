@@ -14,42 +14,26 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.9'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
-
-      - name: Install buildozer and cython
-        run: |
+          pip install --upgrade pip
           pip install buildozer cython
 
       - name: Build APK
         run: |
           buildozer init
-          # Устанавливаем SDK Tools в правильную папку
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools
-          mv cmdline-tools/cmdline-tools /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          
-          # Создаём символическую ссылку для sdkmanager
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
-          ln -s /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          export PATH=$PATH:/home/runner/.buildozer/android/platform/android-sdk/tools/bin
-          
-          # Принимаем лицензии
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-          
-          # Ограничиваем память и запускаем сборку с флагом очистки
-          export GRADLE_OPTS="-Xmx1024m"
-          buildozer android debug --no-root-check --no-cache
+          # Фикс: убираем ошибку с sdkmanager
+          sed -i 's|# android.sdk_path = .*|android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk|g' buildozer.spec
+          sed -i 's|# android.ndk_path = .*|android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r23c|g' buildozer.spec
+          echo "sdkmanager_path = /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager" >> buildozer.spec
+          buildozer android debug --no-root-check
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-apk
+          name: my-app
           path: bin/*.apk
