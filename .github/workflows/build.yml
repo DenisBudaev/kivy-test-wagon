@@ -16,15 +16,34 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+
+      - name: Install buildozer and cython
+        run: |
           pip install buildozer cython
 
       - name: Build APK
         run: |
           buildozer init
+          # Создаём папку для SDK
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk
+          # Скачиваем и устанавливаем SDK Tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools
+          mv cmdline-tools/cmdline-tools /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          export PATH=$PATH:/home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
+          # Принимаем лицензии
+          yes | sdkmanager --licenses
+          # Устанавливаем нужные компоненты
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          # Настраиваем пути в buildozer.spec
+          sed -i 's|# android.sdk_path = .*|android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk|g' buildozer.spec
+          sed -i 's|# android.ndk_path = .*|android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25c|g' buildozer.spec
+          # Запускаем сборку
           buildozer android debug --no-root-check
 
       - name: Upload APK
