@@ -28,8 +28,15 @@ jobs:
       - name: Build APK
         run: |
           buildozer init
-          # Указываем путь к SDK вручную
-          sed -i 's|# android.sdk_path = .*|android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk|g' buildozer.spec
+          # Устанавливаем SDK Tools вручную
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip commandlinetools-linux-11076708_latest.zip
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools
+          mv cmdline-tools /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          export PATH=$PATH:/home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
+          # Устанавливаем необходимые компоненты
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
           buildozer android debug --no-root-check
 
       - name: Upload APK
