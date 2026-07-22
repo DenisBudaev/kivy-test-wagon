@@ -28,24 +28,25 @@ jobs:
       - name: Build APK
         run: |
           buildozer init
-          # Скачиваем и устанавливаем SDK Tools
+          # Устанавливаем SDK Tools в правильную папку
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools
           mv cmdline-tools/cmdline-tools /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
           
-          # 🧠 ОБМАН: создаём папку tools/bin и кладём туда sdkmanager
+          # Создаём символическую ссылку для sdkmanager
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
           ln -s /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           export PATH=$PATH:/home/runner/.buildozer/android/platform/android-sdk/tools/bin
           
-          # Принимаем лицензии и устанавливаем компоненты
+          # Принимаем лицензии
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
           
-          # Запускаем сборку
-          buildozer android debug --no-root-check
+          # Ограничиваем память и запускаем сборку с флагом очистки
+          export GRADLE_OPTS="-Xmx1024m"
+          buildozer android debug --no-root-check --no-cache
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
