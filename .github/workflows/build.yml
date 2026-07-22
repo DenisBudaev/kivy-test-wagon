@@ -28,22 +28,22 @@ jobs:
       - name: Build APK
         run: |
           buildozer init
-          # Устанавливаем SDK Tools в правильную папку
+          # Скачиваем и устанавливаем SDK Tools
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools
           mv cmdline-tools/cmdline-tools /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          export PATH=$PATH:/home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
-          # Принимаем лицензии
+          
+          # 🧠 ОБМАН: создаём папку tools/bin и кладём туда sdkmanager
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
+          ln -s /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          export PATH=$PATH:/home/runner/.buildozer/android/platform/android-sdk/tools/bin
+          
+          # Принимаем лицензии и устанавливаем компоненты
           yes | sdkmanager --licenses
-          # Устанавливаем нужные компоненты
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-          # Настраиваем пути в buildozer.spec (укажем sdkmanager через полный путь)
-          sed -i 's|# android.sdk_path = .*|android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk|g' buildozer.spec
-          sed -i 's|# android.ndk_path = .*|android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25c|g' buildozer.spec
-          # Указываем путь к sdkmanager вручную
-          sed -i 's|# android.sdkmanager_path = .*|android.sdkmanager_path = /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager|g' buildozer.spec
+          
           # Запускаем сборку
           buildozer android debug --no-root-check
 
