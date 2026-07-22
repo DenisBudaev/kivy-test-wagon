@@ -16,15 +16,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install buildozer
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+
+      - name: Install buildozer and cython
+        run: |
           pip install buildozer cython
 
       - name: Build APK
         run: |
           buildozer init
+          # Указываем путь к SDK вручную
+          sed -i 's|# android.sdk_path = .*|android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk|g' buildozer.spec
           buildozer android debug --no-root-check
 
       - name: Upload APK
