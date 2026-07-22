@@ -28,9 +28,8 @@ jobs:
       - name: Build APK
         run: |
           buildozer init
-          # Создаём папку для SDK
+          # Устанавливаем SDK Tools в правильную папку
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk
-          # Скачиваем и устанавливаем SDK Tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools
@@ -40,9 +39,11 @@ jobs:
           yes | sdkmanager --licenses
           # Устанавливаем нужные компоненты
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-          # Настраиваем пути в buildozer.spec
+          # Настраиваем пути в buildozer.spec (укажем sdkmanager через полный путь)
           sed -i 's|# android.sdk_path = .*|android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk|g' buildozer.spec
           sed -i 's|# android.ndk_path = .*|android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25c|g' buildozer.spec
+          # Указываем путь к sdkmanager вручную
+          sed -i 's|# android.sdkmanager_path = .*|android.sdkmanager_path = /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager|g' buildozer.spec
           # Запускаем сборку
           buildozer android debug --no-root-check
 
